@@ -1,0 +1,11 @@
+{
+  "name": "audit",
+  "description": "Audit a codebase without reading it line by line. Call graph plus free checkers point at the risky functions, sub-agents read only those, every finding is verified, then it stops and asks you what to fix.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "homepage": "https://github.com/jayhemnani9910/jod-skills/tree/main/plugins/audit",
+  "license": "MIT"
+}

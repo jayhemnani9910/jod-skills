@@ -1,0 +1,11 @@
+{
+  "name": "jod-skills",
+  "description": "All four skills in one install: audit, hn-daily, github-daily, oss-status.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "homepage": "https://github.com/jayhemnani9910/jod-skills",
+  "license": "MIT"
+}

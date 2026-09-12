@@ -1,0 +1,49 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jod-skills",
+  "description": "Claude Code skills for daily news digests, GitHub trending, open-source status, and codebase audits",
+  "owner": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "metadata": {
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "jod-skills",
+      "source": "./plugins/jod-skills",
+      "description": "All four skills in one install: audit, hn-daily, github-daily, oss-status.",
+      "category": "productivity",
+      "tags": ["skills", "bundle", "news", "github", "audit"]
+    },
+    {
+      "name": "audit",
+      "source": "./plugins/audit",
+      "description": "Audit a codebase without reading it line by line. Call graph plus free checkers point at the risky functions, sub-agents read only those, every finding is verified, then it stops and asks you what to fix.",
+      "category": "code-quality",
+      "tags": ["audit", "review", "static-analysis", "bugs", "security"]
+    },
+    {
+      "name": "hn-daily",
+      "source": "./plugins/hn-daily",
+      "description": "Daily Hacker News digest. Curates the front page down to what is worth your time, reads the comments on the picks, and writes it in plain English.",
+      "category": "productivity",
+      "tags": ["hacker-news", "news", "digest", "daily"]
+    },
+    {
+      "name": "github-daily",
+      "source": "./plugins/github-daily",
+      "description": "Daily GitHub trending digest. Explains every trending repo in plain English from its README, plus an on-demand deep dive into any one repo.",
+      "category": "productivity",
+      "tags": ["github", "trending", "digest", "daily"]
+    },
+    {
+      "name": "oss-status",
+      "source": "./plugins/oss-status",
+      "description": "Says what is waiting on you across your open GitHub work. Reads inline review threads, not just the conversation tab, so a buried maintainer question is not missed.",
+      "category": "productivity",
+      "tags": ["github", "pull-requests", "open-source", "status"]
+    }
+  ]
+}

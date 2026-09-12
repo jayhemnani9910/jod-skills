@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+__pycache__/
+*.pyc
+
+# personal state, never commit
+seen.json
+state.json
+state-external.json
+.audit/
+graphify-out/

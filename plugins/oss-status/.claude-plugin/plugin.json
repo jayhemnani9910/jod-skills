@@ -1,0 +1,11 @@
+{
+  "name": "oss-status",
+  "description": "Says what is waiting on you across your open GitHub work. Reads inline review threads, not just the conversation tab, so a buried maintainer question is not missed.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "homepage": "https://github.com/jayhemnani9910/jod-skills/tree/main/plugins/oss-status",
+  "license": "MIT"
+}

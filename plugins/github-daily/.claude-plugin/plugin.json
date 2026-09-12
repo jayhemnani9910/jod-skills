@@ -1,0 +1,11 @@
+{
+  "name": "github-daily",
+  "description": "Daily GitHub trending digest. Explains every trending repo in plain English from its README, plus an on-demand deep dive into any one repo.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "homepage": "https://github.com/jayhemnani9910/jod-skills/tree/main/plugins/github-daily",
+  "license": "MIT"
+}

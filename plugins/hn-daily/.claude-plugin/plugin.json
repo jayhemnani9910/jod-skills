@@ -1,0 +1,11 @@
+{
+  "name": "hn-daily",
+  "description": "Daily Hacker News digest. Curates the front page down to what is worth your time, reads the comments on the picks, and writes it in plain English.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jay Hemnani",
+    "url": "https://github.com/jayhemnani9910"
+  },
+  "homepage": "https://github.com/jayhemnani9910/jod-skills/tree/main/plugins/hn-daily",
+  "license": "MIT"
+}
