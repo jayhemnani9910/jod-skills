@@ -5,6 +5,7 @@
 # Marks NEW / CHANGED / SAME against the last run, and flags stale items.
 #
 # Usage: fetch.sh [SINCE_YYYY-MM-DD]     (default: 14 days ago)
+#        Open items always show. SINCE only limits closed ones.
 # Env:   OSS_ACCOUNT, OSS_STALE_DAYS, OSS_STATE
 
 set -uo pipefail
@@ -43,7 +44,7 @@ if [ "$who" != "$ACCOUNT" ]; then
 fi
 
 echo "account: $ACCOUNT"
-echo "window: $SINCE to $TODAY   stale after: ${STALE_DAYS}d"
+echo "window: all open, closed since $SINCE (to $TODAY)   stale after: ${STALE_DAYS}d"
 [ -f "$STATE" ] || echo "note: no previous state, everything reads NEW"
 echo
 
@@ -58,7 +59,7 @@ trap 'rm -f "$NEWSTATE"' EXIT
 
 age_days() {
   local t n
-  t=$(date -d "$1" +%s 2>/dev/null) || { echo "?"; return; }
+  t=$(jq -rn --arg t "$1" '$t|fromdateiso8601' 2>/dev/null) || { echo "?"; return; }
   n=$(date +%s)
   echo $(( (n - t) / 86400 ))
 }
@@ -83,12 +84,20 @@ split_url() {
   echo "$1" | sed -E 's#https://github.com/([^/]+/[^/]+)/(pull|issues)/([0-9]+)#\1 \3#'
 }
 
-PR_URLS="$(search_urls prs --author "$ACCOUNT" --created ">=$SINCE")" \
-  || PR_URLS="$(sleep 3; search_urls prs --author "$ACCOUNT" --created ">=$SINCE")" \
+# Open items have no window: an old open PR is exactly the one that goes stale.
+own_urls() { # $1=prs|issues
+  local open closed
+  open="$(search_urls "$1" --author "$ACCOUNT" --state open)" || return 1
+  closed="$(search_urls "$1" --author "$ACCOUNT" --state closed --created ">=$SINCE")" || return 1
+  printf '%s\n%s\n' "$open" "$closed" | sed '/^$/d'
+}
+
+PR_URLS="$(own_urls prs)" \
+  || PR_URLS="$(sleep 3; own_urls prs)" \
   || { echo "ERROR: could not search pull requests (gh search failed twice)."; PR_URLS=""; }
 
-ISSUE_URLS="$(search_urls issues --author "$ACCOUNT" --created ">=$SINCE")" \
-  || ISSUE_URLS="$(sleep 3; search_urls issues --author "$ACCOUNT" --created ">=$SINCE")" \
+ISSUE_URLS="$(own_urls issues)" \
+  || ISSUE_URLS="$(sleep 3; own_urls issues)" \
   || { echo "ERROR: could not search issues (gh search failed twice)."; ISSUE_URLS=""; }
 
 # Review requests ignore the window. An old one still sits on him.
@@ -114,7 +123,7 @@ pr_block() { # $1=repo $2=num $3=url $4=kind
     \"state: \(.state)\(if .isDraft then \" (DRAFT)\" else \"\" end)  size: +\(.additions)/-\(.deletions)\",
     \"merge: \(.mergeable) / \(.mergeStateStatus)  reviewDecision: \(if .reviewDecision == \"\" then \"none\" else .reviewDecision end)\",
     \"labels: \(if (.labels|length)==0 then \"-\" else ([.labels[].name]|join(\", \")) end)\",
-    \"checks: \(if (.statusCheckRollup|length)==0 then \"none\" else ([.statusCheckRollup[]|\"\(.name)=\(.conclusion // .status)\"]|join(\" \")) end)\",
+    \"checks: \(if (.statusCheckRollup|length)==0 then \"none\" else ([.statusCheckRollup[]|\"\(.name // .context)=\(.conclusion // .state // .status)\"]|join(\" \")) end)\",
     \"reviews_human: \(([.reviews[]|select((.author.login|isbot)|not)|\"\(.author.login):\(.state)\"]|unique|join(\" \")) as \$h | if \$h==\"\" then \"NONE\" else \$h end)\",
     \"reviews_bot: \(([.reviews[]|select(.author.login|isbot)|\"\(.author.login):\(.state)\"]|unique|join(\" \")) as \$b | if \$b==\"\" then \"none\" else \$b end)\",
     \"commenters_human: \(([.comments[]|select((.author.login|isbot)|not)|.author.login]|unique|join(\" \")) as \$c | if \$c==\"\" then \"NONE\" else \$c end)\",
@@ -140,7 +149,7 @@ pr_block() { # $1=repo $2=num $3=url $4=kind
   fi
 
   emit_change "$kind:$repo#$num" \
-    "$updated|$(echo "$d" | jq -r '.reviewDecision')|$(echo "$d" | jq -r '[.statusCheckRollup[]?|(.conclusion // .status)]|join(",")')|$(echo "$d" | jq -r '.comments|length')|$(echo "$threads" | jq -r 'length')"
+    "$updated|$(echo "$d" | jq -r '.reviewDecision')|$(echo "$d" | jq -r '[.statusCheckRollup[]?|(.conclusion // .state // .status)]|join(",")')|$(echo "$d" | jq -r '.comments|length')|$(echo "$threads" | jq -r 'length')"
   echo
 }
 

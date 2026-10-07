@@ -107,7 +107,13 @@ def get_front_page(n):
     ids = fetch(f"{FIREBASE}/topstories.json")[:n]
 
     def one(i):
-        it = fetch(f"{FIREBASE}/item/{i}.json")
+        try:
+            it = fetch(f"{FIREBASE}/item/{i}.json")
+        except Exception as e:
+            sys.stderr.write(f"item {i} failed, skipped: {e}\n")
+            return None
+        if not it:  # deleted or dead items come back as null
+            return None
         return {
             "objectID": str(i),
             "title": it.get("title"),
@@ -118,7 +124,7 @@ def get_front_page(n):
         }
 
     with ThreadPoolExecutor(max_workers=10) as ex:
-        return list(ex.map(one, ids)), "firebase"
+        return [s for s in ex.map(one, ids) if s], "firebase"
 
 
 def get_comments(oid, limit=8, maxlen=600):

@@ -23,7 +23,7 @@ Modes:
 
 Nothing is hardcoded: the repo list and current trends are fetched fresh.
 """
-import urllib.request, urllib.error, json, re, html, sys, os, argparse
+import urllib.request, urllib.error, urllib.parse, json, re, html, sys, os, argparse
 from concurrent.futures import ThreadPoolExecutor
 
 TRENDING = "https://github.com/trending"
@@ -232,7 +232,7 @@ def file_mode(spec, full):
         print(json.dumps({"error": "use --file owner/repo:path/to/file"}))
         sys.exit(5)
     try:
-        txt = fetch_text(f"{API}/repos/{slug}/contents/{path}", "application/vnd.github.raw")
+        txt = fetch_text(f"{API}/repos/{slug}/contents/{urllib.parse.quote(path)}", "application/vnd.github.raw")
     except Exception as e:
         print(json.dumps({"error": str(e), "path": path}))
         sys.exit(6)

@@ -35,5 +35,5 @@ your work.
 | `OSS_STALE_DAYS` | `14` | idle days before something counts as stale |
 | `OSS_STATE` | `~/.local/state/jod-skills/oss-status/state.json` | the new/changed history |
 
-Window is the last 14 days by default. Pass a date to widen it:
-`/oss-status since 2026-08-19`.
+Open items always show. Closed ones only from the last 14 days; pass a date to
+widen it: `/oss-status since 2026-08-19`.
