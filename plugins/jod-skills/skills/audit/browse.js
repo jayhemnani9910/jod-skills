@@ -34,7 +34,7 @@ function serve(root) {
       let p = decodeURIComponent(req.url.split("?")[0]);
       if (p.endsWith("/")) p += "index.html";
       const file = path.join(root, p);
-      if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+      if ((file !== root && !file.startsWith(root + path.sep)) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) {
         res.writeHead(404); res.end("not found"); return;
       }
       res.writeHead(200, { "Content-Type": MIME[path.extname(file)] || "application/octet-stream" });

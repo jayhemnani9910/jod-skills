@@ -39,7 +39,7 @@ START
 
 CHECK
   output starts with FATAL? -> LOGIN BROKE
-  no blocks at all?         -> say "nothing open in this window", stop
+  no blocks at all?         -> say "nothing open, nothing closed in this window", stop
   else                      -> READ
 
 LOGIN BROKE
@@ -108,8 +108,8 @@ CHECKLIST
 - The script writes `state.json` under `~/.local/state/jod-skills/oss-status/`.
   That is how `change` works. If it is missing, everything reads `NEW` and that
   is correct, not a bug.
-- Window is the last 14 days unless the user says otherwise. Review requests
-  ignore the window, since an old one still sits on them.
+- Open items always show. The window, the last 14 days unless the user says
+  otherwise, only limits closed ones. Review requests are open ones only.
 - Stale line is 14 days idle. `OSS_STALE_DAYS=7 fetch.sh` to move it.
 - Skip nothing. If the user cannot act on it and nobody has touched it, it still
   gets a table row, just not a to-do line.

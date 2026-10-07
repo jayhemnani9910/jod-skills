@@ -322,10 +322,11 @@ def build_modules(project, g):
     for f, c in file_comm.items():
         comm_files[c].append(f)
     mods = []
+    unparsed = sorted(meta["unparsed"])  # no symbols, so the pack reads them whole if small
     if len(files) < 40:
-        mods.append({"id": "all", "files": files})
+        mods.append({"id": "all", "files": files + unparsed})
     else:
-        rest = []
+        rest = list(unparsed)
         for c, fl in comm_files.items():
             if len(fl) < 3 and sum(1 for n in nodes.values() if n["file"] in fl) < TINY_MODULE:
                 rest += fl
@@ -361,7 +362,9 @@ def cmd_next(project, n):
         mods = build_modules(project, g)
         save(mp, mods)
     prog = load(os.path.join(d, "progress.json"), {"done": []})
-    todo = [m for m in mods if m["id"] not in prog["done"]]
+    # module ids change when graph re-clusters, the files read do not
+    read = set(prog.get("files", []))
+    todo = [m for m in mods if not set(m["files"]) <= read]
     print(f"modules {len(mods)}, done {len(mods) - len(todo)}, left {len(todo)}")
     for m in todo[:n]:
         print(f"NEXT {m['id']}  {m.get('name', '')}  rank {m['rank']}  risk {m['risk']}  files {len(m['files'])}  funcs {m['funcs']}  lines {m['lines']}  checker hits {m['hits']}")
@@ -415,13 +418,9 @@ def cmd_pack(project, mod_id, budget, page):
             outc[e["src"]] += 1
     syms = [n for n in nodes.values() if n["file"] in fs and n["kind"] != "file"]
     syms.sort(key=lambda n: (n["file"], n["start"] or 0))
-    if page > 1:
-        out.append("## Symbols, edges and checker hits are on page 1")
-        syms_shown = []
-    else:
-        out.append("## Symbols  file:start-end name [in=callers out=callees] flags")
-        syms_shown = syms
-    for n in syms_shown:
+    cut = len(out)
+    out.append("## Symbols  file:start-end name [in=callers out=callees] flags")
+    for n in syms:
         flags = []
         if n["id"] in meta["dead"]:
             flags.append("NEVER-CALLED")
@@ -432,32 +431,34 @@ def cmd_pack(project, mod_id, budget, page):
         if n.get("hook"):
             flags.append(n["hook"].upper())
         out.append(f"- {n['file']}:{n['start']}-{n['end']} {n['name']} [in={inc[n['id']]} out={outc[n['id']]}] {' '.join(flags)}".rstrip())
-    if page == 1:
-        out.append("")
-        out.append("## Edges leaving the module (what it depends on, what depends on it)")
-        cross = 0
-        for e in g["edges"]:
-            s, t = nodes.get(e["src"]), nodes.get(e["dst"])
-            if not s or not t:
-                continue
-            if (s["file"] in fs) != (t["file"] in fs):
-                cross += 1
-                if cross <= 40:
-                    out.append(f"- {s['file']}:{s['name']} {e['rel']} {t['file']}:{t['name']}")
-        if cross > 40:
-            out.append(f"- and {cross - 40} more")
-        out.append("")
-        out.append("## Checker hits in this module")
-        any_hit = False
-        for f in sorted(fs):
-            for h in per_line.get(f, [])[:30]:
-                any_hit = True
-                out.append(f"- {f}:{h.get('line')} [{h.get('tool')} {h.get('code', '')}] {h.get('msg', '')[:160]}")
-        if not any_hit:
-            out.append("- none")
+    out.append("")
+    out.append("## Edges leaving the module (what it depends on, what depends on it)")
+    cross = 0
+    for e in g["edges"]:
+        s, t = nodes.get(e["src"]), nodes.get(e["dst"])
+        if not s or not t:
+            continue
+        if (s["file"] in fs) != (t["file"] in fs):
+            cross += 1
+            if cross <= 40:
+                out.append(f"- {s['file']}:{s['name']} {e['rel']} {t['file']}:{t['name']}")
+    if cross > 40:
+        out.append(f"- and {cross - 40} more")
+    out.append("")
+    out.append("## Checker hits in this module")
+    any_hit = False
+    for f in sorted(fs):
+        for h in per_line.get(f, [])[:30]:
+            any_hit = True
+            out.append(f"- {f}:{h.get('line')} [{h.get('tool')} {h.get('code', '')}] {h.get('msg', '')[:160]}")
+    if not any_hit:
+        out.append("- none")
     out.append("")
     # bodies, riskiest first. One ordered list of chunks, cut into pages by budget.
+    # The cut always uses the page 1 header cost, so every page agrees on where pages start.
     head_tokens = sum(len(x) for x in out) // 4
+    if page > 1:
+        out[cut:] = ["## Symbols, edges and checker hits are on page 1", ""]
     out.append(f"## Code, riskiest first, page {page}. Line numbers are real. Anything not shown was not read.")
 
     def risk(n):
@@ -548,8 +549,10 @@ def cmd_report(project, modules):
     g = load(os.path.join(d, "graph.json"), {"meta": {"unparsed": []}})
     mods = load(os.path.join(d, "modules.json"), [])
     prog = load(os.path.join(d, "progress.json"), {"done": []})
+    read = set(prog.get("files", [])) | {f for m in mods if m["id"] in modules for f in m["files"]}
+    left = sum(1 for m in mods if not set(m["files"]) <= read)
     lines = [f"# Audit: {os.path.basename(project)}", ""]
-    lines.append(f"modules read this run: {', '.join(modules) or 'none'}   left after this run: {max(0, len(mods) - len(set(prog['done']) | set(modules)))}")
+    lines.append(f"modules read this run: {', '.join(modules) or 'none'}   left after this run: {left}")
     lines.append(f"checker hits: {len(chk['findings'])}   findings kept: {len(kept)}   dropped by verify: {len(dropped)}   unverified: {len(unv)}")
     lines.append("")
     lines.append("## Findings, ranked. This list is ranked, not complete.")
@@ -588,6 +591,9 @@ def cmd_done(project, mod_id):
     prog = load(p, {"done": []})
     if mod_id not in prog["done"]:
         prog["done"].append(mod_id)
+    mods = load(os.path.join(audit_dir(project), "modules.json"), [])
+    files = next((m["files"] for m in mods if m["id"] == mod_id), [])
+    prog["files"] = sorted(set(prog.get("files", [])) | set(files))
     save(p, prog)
     print(f"done: {', '.join(prog['done'])}")
 

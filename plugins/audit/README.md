@@ -16,7 +16,7 @@ Then: `/audit <path to a project>`
    clippy, semgrep, gitleaks. Missing ones are skipped and named in the report.
 3. Splits the repo into modules and ranks them by risk.
 4. Sub-agents read only the function bodies the graph and the checkers point at,
-   never whole files.
+   plus small files whole.
 5. A second pass verifies every finding, so false alarms get dropped.
 6. It stops and shows you a numbered list. Nothing is edited until you pick.
 7. Fixes you pick go on a branch, get tested, and get committed.
