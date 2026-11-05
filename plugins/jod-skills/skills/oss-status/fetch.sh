@@ -10,7 +10,6 @@
 
 set -uo pipefail
 
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The account defaults to whoever gh is logged in as. Set OSS_ACCOUNT to pin
 # one when you have more than one account.
 ACCOUNT="${OSS_ACCOUNT:-$(env -u GITHUB_TOKEN -u GH_TOKEN gh api user --jq .login 2>/dev/null)}"
