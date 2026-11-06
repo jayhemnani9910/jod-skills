@@ -9,3 +9,9 @@ state.json
 state-external.json
 .audit/
 graphify-out/
+
+# env files, only the example is tracked
+.env*
+!.env.example
+
+.ruff_cache/
